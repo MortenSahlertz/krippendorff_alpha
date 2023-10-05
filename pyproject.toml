@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[dependencies]
+numpy = "^1.21.0"
+pandas = "^1.3.0"
+tqdm = "^4.61.0"
+
+[project]
+name = "krippendorff_alpha"
+version = "0.0.1"
+authors = [
+  { name="Morten Sahlertz", email="morten.sahlertz@outlook.com" },
+]
+description = "Krippendorff's alpha - with bootstrap method"
+readme = "README.md"
+keywords = ["Krippendorff", "alpha", "agreement", "observer"]
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/MortenSahlertz/krippendorff_alpha"
+"Bug Tracker" = "https://github.com/MortenSahlertz/krippendorff_alpha/issues"
