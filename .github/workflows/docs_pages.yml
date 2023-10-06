@@ -33,13 +33,15 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -U sphinx
           python -m pip install ghp-import
+          python -m pip install numpy
+          python -m pip install pandas
+          python -m pip install tqdm
           python -m pip install sphinx-rtd-theme
       - name: Build HTML
         run: | 
           cd docs/
           make clean html
           make html
-          ls
       - name: Run ghp-import
         run: | 
           ghp-import -n -p -f docs/_build/html
