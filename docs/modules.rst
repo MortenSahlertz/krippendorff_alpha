@@ -1,5 +1,5 @@
-src
-===
+krippendorff_alpha
+==================
 
 .. toctree::
    :maxdepth: 4
