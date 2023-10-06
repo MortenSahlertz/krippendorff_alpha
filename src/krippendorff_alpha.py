@@ -54,7 +54,6 @@ class Krippendorff():
         dimensions = np.shape(self.x)
         self.number_of_observers = dimensions[0]
         self.number_of_units = dimensions[1]
-        
 
         self.unique_values = np.unique(self.x)
         self.unique_values_without_nan = sum(~np.isnan(self.unique_values))
