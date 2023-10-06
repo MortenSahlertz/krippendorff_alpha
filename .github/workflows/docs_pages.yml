@@ -36,7 +36,7 @@ jobs:
           python -m pip install sphinx-rtd-theme
       - name: Build HTML
         run: | 
-          sphinx-apidoc -o docs src/
+          sphinx-apidoc -o docs src/.
           cd docs/
           make clean html
           make html
