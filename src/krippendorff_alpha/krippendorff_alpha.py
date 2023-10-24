@@ -60,6 +60,7 @@ class Krippendorff():
 
         self.pairable_values = np.array([np.sum(~np.isnan(self.x)[:, column]) for column in range(self.number_of_units)])
 
+
         self.get_coincidence_matrix()
         self.get_expected_matrix()
         self.get_delta_matrix()
