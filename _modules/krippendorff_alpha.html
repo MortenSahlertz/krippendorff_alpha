@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>krippendorff_alpha &mdash; krippendorff_alpha 0.1.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=01f34227"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            krippendorff_alpha
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">krippendorff_alpha</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">krippendorff_alpha</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">krippendorff_alpha</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for krippendorff_alpha</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<div class="viewcode-block" id="Krippendorff">
+<a class="viewcode-back" href="../krippendorff_alpha.html#krippendorff_alpha.Krippendorff">[docs]</a>
+<span class="k">class</span> <span class="nc">Krippendorff</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate Krippendorff&#39;s Alpha reliability estimate for inter-rater agreement.</span>
+
+<span class="sd">    This class computes Krippendorff&#39;s Alpha, a measure of inter-rater agreement, based on a given dataset.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - x (numpy.ndarray): The input dataset where rows represent observers, and columns represent units or items being rated.</span>
+<span class="sd">    - method (str, optional): The measurement level of the data, one of {&quot;nominal&quot;, &quot;ordinal&quot;, &quot;interval&quot;, &quot;ratio&quot;}.</span>
+<span class="sd">      Defaults to &quot;nominal&quot;.</span>
+<span class="sd">    - run_bootstrap (bool, optional): Whether to perform a bootstrap procedure to estimate confidence intervals.</span>
+<span class="sd">      Defaults to False.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">    - x (numpy.ndarray): The input dataset.</span>
+<span class="sd">    - method (str): The measurement level of the data.</span>
+<span class="sd">    - if_run_bootstrap (bool): Indicates if the bootstrap procedure is enabled.</span>
+<span class="sd">    - number_of_observers (int): The number of observers in the dataset.</span>
+<span class="sd">    - number_of_units (int): The number of units or items being rated.</span>
+<span class="sd">    - unique_values (numpy.ndarray): Unique values in the dataset.</span>
+<span class="sd">    - unique_values_without_nan (int): Number of unique values excluding NaN.</span>
+<span class="sd">    - pairable_values (numpy.ndarray): Number of non-NaN ratings for each unit.</span>
+<span class="sd">    - coincidence_matrix (numpy.ndarray): Observed coincidence matrix.</span>
+<span class="sd">    - expected_matrix (numpy.ndarray): Expected coincidence matrix.</span>
+<span class="sd">    - delta_matrix (numpy.ndarray): Delta matrix.</span>
+<span class="sd">    - alpha (float): Krippendorff&#39;s Alpha reliability estimate.</span>
+<span class="sd">    - boot_alphas (numpy.ndarray): Bootstrap estimates of Alpha (if run_bootstrap is True).</span>
+<span class="sd">    - boot_iterations (int): Number of bootstrap iterations (if run_bootstrap is True).</span>
+<span class="sd">    - lower_confidence_level (float): Lower bound of confidence interval (if run_bootstrap is True).</span>
+<span class="sd">    - upper_confidence_level (float): Upper bound of confidence interval (if run_bootstrap is True).</span>
+<span class="sd">    - alpha_min_probability (float): Probability of achieving Alpha greater than alpha_min (if run_bootstrap is True).</span>
+<span class="sd">    - alpha_min_list (list): List of alpha_min values (if run_bootstrap is True).</span>
+<span class="sd">    - probabilities_for_alphas (list): List of probabilities for achieving specified alpha_min values (if run_bootstrap is True).</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">    - get_coincidence_matrix(): Calculate the observed coincidence matrix.</span>
+<span class="sd">    - get_expected_matrix(): Calculate the expected coincidence matrix.</span>
+<span class="sd">    - get_delta_matrix(): Calculate the delta matrix.</span>
+<span class="sd">    - get_alpha(): Calculate Krippendorff&#39;s Alpha reliability estimate.</span>
+<span class="sd">    - run_bootstrap(iterations): Perform bootstrap procedure to estimate Alpha (if enabled).</span>
+<span class="sd">    - get_bootstrap_values(alpha_min, probabilities): Calculate confidence intervals and probabilities for alpha_min (if run_bootstrap is True).</span>
+<span class="sd">    - print_data(): Display the results, including Alpha, confidence intervals, and matrices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;nominal&quot;</span><span class="p">,</span> <span class="n">run_bootstrap</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">if_run_bootstrap</span> <span class="o">=</span> <span class="n">run_bootstrap</span>
+        <span class="n">dimensions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_observers</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_units</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pairable_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)[:,</span> <span class="n">column</span><span class="p">])</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_units</span><span class="p">)])</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_coincidence_matrix</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_expected_matrix</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_delta_matrix</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_alpha</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">if_run_bootstrap</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_bootstrap</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="Krippendorff.get_coincidence_matrix">
+<a class="viewcode-back" href="../krippendorff_alpha.html#krippendorff_alpha.Krippendorff.get_coincidence_matrix">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_coincidence_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the observed coincidence matrix.</span>
+
+<span class="sd">        This method computes the observed coincidence matrix for the input data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coincidence_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_units</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">index_1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_observers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">index_2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">index_1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_observers</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="n">index_1</span><span class="p">,</span> <span class="n">column</span><span class="p">])</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="n">index_2</span><span class="p">,</span> <span class="n">column</span><span class="p">]):</span>
+                        <span class="n">judgement1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="n">index_1</span><span class="p">,</span> <span class="n">column</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">judgement2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="n">index_2</span><span class="p">,</span> <span class="n">column</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">coincidence_matrix</span><span class="p">[</span><span class="n">judgement1</span><span class="p">,</span> <span class="n">judgement2</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">judgement1</span> <span class="o">==</span> <span class="n">judgement2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pairable_values</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">judgement1</span> <span class="o">!=</span> <span class="n">judgement2</span><span class="p">:</span>
+                            <span class="n">coincidence_matrix</span><span class="p">[</span><span class="n">judgement2</span><span class="p">,</span> <span class="n">judgement1</span><span class="p">]</span> <span class="o">=</span> <span class="n">coincidence_matrix</span><span class="p">[</span><span class="n">judgement1</span><span class="p">,</span> <span class="n">judgement2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span> <span class="o">=</span> <span class="n">coincidence_matrix</span></div>
+
+
+<div class="viewcode-block" id="Krippendorff.get_expected_matrix">
+<a class="viewcode-back" href="../krippendorff_alpha.html#krippendorff_alpha.Krippendorff.get_expected_matrix">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_expected_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the expected coincidence matrix.</span>
+
+<span class="sd">        This method computes the expected coincidence matrix for the input data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jugdments</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amount_of_jugdments</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="n">expected_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">):</span>
+                <span class="n">expected_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jugdments</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jugdments</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">c</span> <span class="o">==</span> <span class="n">k</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amount_of_jugdments</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_matrix</span> <span class="o">=</span> <span class="n">expected_matrix</span></div>
+
+
+<div class="viewcode-block" id="Krippendorff.get_delta_matrix">
+<a class="viewcode-back" href="../krippendorff_alpha.html#krippendorff_alpha.Krippendorff.get_delta_matrix">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_delta_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the delta matrix.</span>
+
+<span class="sd">        This method computes the delta matrix based on the measurement level of the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">delta_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;nominal&quot;</span><span class="p">:</span>
+                    <span class="n">delta_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">c</span> <span class="o">!=</span> <span class="n">k</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;ordinal&quot;</span><span class="p">:</span>
+                    <span class="n">delta_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">if</span> <span class="n">c</span> <span class="o">&lt;=</span> <span class="n">k</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                            <span class="n">delta_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jugdments</span><span class="p">[</span><span class="n">g</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">c</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                            <span class="n">delta_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">jugdments</span><span class="p">[</span><span class="n">g</span><span class="p">]</span>
+                    <span class="n">delta_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">-=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jugdments</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">jugdments</span><span class="p">[</span><span class="n">c</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="n">delta_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">delta_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;interval&quot;</span><span class="p">:</span>
+                    <span class="n">delta_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;ratio&quot;</span><span class="p">:</span>
+                    <span class="n">delta_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_matrix</span> <span class="o">=</span> <span class="n">delta_matrix</span></div>
+
+
+<div class="viewcode-block" id="Krippendorff.get_alpha">
+<a class="viewcode-back" href="../krippendorff_alpha.html#krippendorff_alpha.Krippendorff.get_alpha">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_alpha</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate Krippendorff&#39;s Alpha reliability estimate.</span>
+
+<span class="sd">        This method computes Krippendorff&#39;s Alpha based on the observed and expected coincidence matrices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observed_disagreement</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_matrix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_disagreement</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_matrix</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_matrix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_disagreement</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_disagreement</span></div>
+
+
+<div class="viewcode-block" id="Krippendorff.run_bootstrap">
+<a class="viewcode-back" href="../krippendorff_alpha.html#krippendorff_alpha.Krippendorff.run_bootstrap">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_bootstrap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform bootstrap procedure to estimate Alpha.</span>
+
+<span class="sd">        This method performs a bootstrap procedure to estimate Krippendorff&#39;s Alpha and store the results.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dimension_coincidence_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">triangle_coincidence_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">dimension_coincidence_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">0</span><span class="p">)]</span>
+        <span class="n">probability_coincidence_matrix</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">amount_of_jugdments</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">fill_diagonal</span><span class="p">(</span><span class="n">probability_coincidence_matrix</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">amount_of_jugdments</span><span class="p">)</span>
+        <span class="n">probability_sum</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ck</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">probability_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">triangle_coincidence_matrix</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_values_without_nan</span><span class="p">):</span>
+                <span class="n">probability_sum</span> <span class="o">+=</span> <span class="n">probability_coincidence_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span>
+                <span class="n">probability_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ck</span><span class="p">]</span> <span class="o">=</span> <span class="n">probability_sum</span>
+                <span class="n">probability_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">ck</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_matrix</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span>
+                <span class="n">ck</span> <span class="o">+=</span> <span class="mi">1</span>
+
+
+        <span class="n">total_unique_pairs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">pairable_values</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pairable_values</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+        <span class="n">boot_alphas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">iterations</span><span class="p">)</span>
+        <span class="n">number_one</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">iters</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">iterations</span><span class="o">+</span><span class="mi">1</span><span class="p">)):</span>
+            <span class="n">randoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">total_unique_pairs</span><span class="p">)))]</span>
+            <span class="n">number_sum</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">randoms</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">probability_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="k">if</span> <span class="n">randoms</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">probability_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="n">randoms</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">probability_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                            <span class="n">number_sum</span> <span class="o">+=</span> <span class="n">probability_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+
+            <span class="n">alpha</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">number_sum</span><span class="o">/</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_disagreement</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">amount_of_jugdments</span><span class="p">)</span><span class="o">*</span><span class="n">total_unique_pairs</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">alpha</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">number_one</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">boot_alphas</span><span class="p">[</span><span class="n">iters</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">boot_alphas</span> <span class="o">=</span> <span class="n">boot_alphas</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boot_iterations</span> <span class="o">=</span> <span class="n">iterations</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_bootstrap_values</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Krippendorff.get_bootstrap_values">
+<a class="viewcode-back" href="../krippendorff_alpha.html#krippendorff_alpha.Krippendorff.get_bootstrap_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_bootstrap_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.80</span><span class="p">,</span> <span class="n">probabilities</span><span class="o">=</span><span class="p">[</span><span class="mf">0.025</span><span class="p">,</span> <span class="mf">0.975</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate bootstrap values and confidence intervals for a statistic.</span>
+
+<span class="sd">        This method calculates various statistics related to a bootstrap sampling distribution,</span>
+<span class="sd">        including confidence intervals and probabilities.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">alpha_min</span> <span class="o">&lt;=</span> <span class="mf">1.0</span> <span class="ow">and</span> <span class="n">alpha_min</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">&#39;alpha_min must be between 1.0 and 0.0&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha_min</span> <span class="o">=</span> <span class="n">alpha_min</span>
+        <span class="n">quantiles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boot_alphas</span><span class="p">,</span> <span class="n">probabilities</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lower_confidence_level</span> <span class="o">=</span> <span class="n">quantiles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upper_confidence_level</span> <span class="o">=</span> <span class="n">quantiles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha_min_probability</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boot_alphas</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_min</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">boot_iterations</span>
+
+        <span class="n">alpha_min_list</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.67</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
+        <span class="n">probabilities_for_alphas</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">alpha</span> <span class="ow">in</span> <span class="n">alpha_min_list</span><span class="p">:</span>
+            <span class="n">probabilities_for_alphas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boot_alphas</span> <span class="o">&gt;</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">boot_iterations</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha_min_list</span> <span class="o">=</span> <span class="n">alpha_min_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">probailities_for_alphas</span> <span class="o">=</span> <span class="n">probabilities_for_alphas</span></div>
+
+        
+<div class="viewcode-block" id="Krippendorff.print_data">
+<a class="viewcode-back" href="../krippendorff_alpha.html#krippendorff_alpha.Krippendorff.print_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">print_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display the results, including Alpha, confidence intervals, and matrices.</span>
+
+<span class="sd">        This method prints the computed values, observed and expected matrices, and additional statistics.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">print_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="n">print_dataframe</span><span class="p">[</span><span class="s1">&#39;Alpha&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]</span>
+        <span class="n">print_dataframe</span><span class="p">[</span><span class="s1">&#39;LL95%CI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower_confidence_level</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]</span>
+        <span class="n">print_dataframe</span><span class="p">[</span><span class="s1">&#39;UL95%CI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upper_confidence_level</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]</span>
+        <span class="n">print_dataframe</span><span class="p">[</span><span class="s1">&#39;Units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_units</span><span class="p">]</span>
+        <span class="n">print_dataframe</span><span class="p">[</span><span class="s1">&#39;Observers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_observers</span><span class="p">]</span>
+        <span class="n">print_dataframe</span><span class="p">[</span><span class="s1">&#39;Pairs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">sum</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pairable_values</span><span class="p">)]</span>
+        <span class="n">print_dataframe</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()]</span>
+        <span class="n">probabilities_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="n">probabilities_dataframe</span><span class="p">[</span><span class="s1">&#39;alphamin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_min_list</span>
+        <span class="n">probabilities_dataframe</span><span class="p">[</span><span class="s1">&#39;q&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">probailities_for_alphas</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Krippendorff&#39;s Alpha Reliability Estimate</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">print_dataframe</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Probability (q) of failure to achieve an alpha of at least alphamin:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">probabilities_dataframe</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Number of bootstrap samples:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boot_iterations</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Judges used in these computations:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;obsa obsb obsc obsd&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Observed Coincidence Matrix&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coincidence_matrix</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Expected Coincidence Matrix&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_matrix</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Delta Matrix&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delta_matrix</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Rows and columns correspond to following unit values&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_values</span><span class="p">)])</span></div>
+</div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Morten Sahlertz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
